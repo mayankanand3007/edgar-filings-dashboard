@@ -4,10 +4,9 @@ import os
 import pandas as pd
 import streamlit as st
 import altair as alt
-from pymongo import MongoClient
 
-import certifi
-from dotenv import dotenv_values
+# Mongo helper is imported below (relative import) so the app can display a
+# clear error if optional dependencies (pymongo, certifi) are missing.
 
 # =====================================================
 # Page config
@@ -18,7 +17,20 @@ st.title("📊 EDGAR Filings Analytics Dashboard (2025)")
 # =====================================================
 # MongoDB connection (strict: read from .env only)
 # =====================================================
-from streamlit_app.mongo import get_mongo_client_from_env
+# Load the mongo helper module by file path so importing works both when
+# the app is run as a package and when Streamlit executes the script directly.
+from pathlib import Path
+import importlib.util
+
+try:
+    mongo_path = Path(__file__).resolve().parent / "mongo.py"
+    spec = importlib.util.spec_from_file_location("streamlit_app.mongo", str(mongo_path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    get_mongo_client_from_env = mod.get_mongo_client_from_env
+except Exception as exc:  # pragma: no cover - import-time failure
+    st.error(f"Unable to load Mongo helper from `{mongo_path}`: {exc}")
+    st.stop()
 
 try:
     client, MONGO_DB = get_mongo_client_from_env(".env")
