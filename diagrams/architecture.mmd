@@ -1,10 +1,33 @@
-```mermaid
 flowchart LR
-  A[SEC EDGAR Index Files<br/>daily + quarterly master.idx] --> B[Ingest<br/>Python + Dask]
-  B --> C[(MongoDB Replica Set<br/>raw_filings)]
-  C --> D[Clean + Validate<br/>Dask + Pydantic]
-  D --> E[(MongoDB<br/>clean_filings)]
-  E --> F[Aggregate (Gold)<br/>Dask groupby]
-  F --> G[(MongoDB<br/>gold_* collections)]
-  G --> H[Streamlit Dashboard]
-```
+  subgraph data["data edgar_cache"]
+    A[SEC EDGAR Index Files<br>daily and quarterly master.idx]
+  end
+
+  subgraph ingest["src edgar_pipeline"]
+    B[Ingest<br>Python and Dask]
+  end
+
+  subgraph mongo["MongoDB Replica Set<br>docker-compose and mongo-init"]
+    C[(raw_filings)]
+    E[(clean_filings)]
+    G[(gold collections)]
+  end
+
+  subgraph cleaning["src edgar_pipeline cleaning"]
+    D[Clean and Validate<br>Dask and Pydantic]
+  end
+
+  subgraph aggr["src edgar_pipeline aggregation"]
+    F[Aggregate Gold<br>Dask groupby]
+  end
+
+  subgraph app["streamlit_app"]
+    H[Streamlit Dashboard<br>app.py]
+  end
+
+  A --> B --> C
+  C --> D --> E
+  E --> F --> G --> H
+
+  classDef db fill:#f9f,stroke:#333,stroke-width:1px;
+  class C,E,G db
