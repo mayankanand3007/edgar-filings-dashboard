@@ -1,0 +1,2 @@
+[console_scripts]
+edgar-pipeline = edgar_pipeline.cli:main

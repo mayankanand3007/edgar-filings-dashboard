@@ -1,0 +1,10 @@
+```mermaid
+flowchart LR
+  A[SEC EDGAR Index Files<br/>daily + quarterly master.idx] --> B[Ingest<br/>Python + Dask]
+  B --> C[(MongoDB Replica Set<br/>raw_filings)]
+  C --> D[Clean + Validate<br/>Dask + Pydantic]
+  D --> E[(MongoDB<br/>clean_filings)]
+  E --> F[Aggregate (Gold)<br/>Dask groupby]
+  F --> G[(MongoDB<br/>gold_* collections)]
+  G --> H[Streamlit Dashboard]
+```

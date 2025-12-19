@@ -1,0 +1,325 @@
+Metadata-Version: 2.4
+Name: edgar-mongo-bigdata
+Version: 0.1.0
+Summary: EDGAR filings big-data pipeline using MongoDB (Docker), Dask, Pydantic, mypy, pytest, Streamlit.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: dask[dataframe]>=2024.4.0
+Requires-Dist: pandas>=2.2.0
+Requires-Dist: pyarrow>=16.0.0
+Requires-Dist: pymongo>=4.7.0
+Requires-Dist: pydantic>=2.6.0
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: requests>=2.32.0
+Requires-Dist: streamlit>=1.36.0
+Requires-Dist: certifi>=2025.11.12
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: mypy>=1.10.0; extra == "dev"
+Requires-Dist: ruff>=0.6.0; extra == "dev"
+Requires-Dist: types-requests>=2.32.0.20240712; extra == "dev"
+Requires-Dist: types-python-dateutil>=2.9.0.20240316; extra == "dev"
+
+# EDGAR Filings Big Data Analytics
+
+**MongoDB • Docker • Dask • uv • Pydantic • mypy • PyTest • Streamlit**
+
+---
+
+## Project Overview
+
+This project builds an **end-to-end Big Data pipeline** using **SEC EDGAR filings** and **MongoDB (Docker Replica Set)**.
+The pipeline ingests **750,000+ filing records**, cleans and validates them, builds **gold-layer aggregations**, and visualizes insights using **Streamlit**.
+
+The project follows **industry-style data engineering practices** and satisfies all capstone rubric requirements.
+
+---
+
+## Big Data Platform & Architecture
+
+### Platform Choice
+
+* **MongoDB** deployed via **Docker Compose**
+* **3-node Replica Set (rs0)**
+
+  * `mongo1` (PRIMARY)
+  * `mongo2` (SECONDARY)
+  * `mongo3` (SECONDARY)
+
+### Why MongoDB?
+
+* Native support for **large semi-structured data**
+* Horizontal scalability
+* Replica sets demonstrate **distributed system behavior**
+* Excellent fit for EDGAR filings (JSON-like records)
+
+### Architecture Diagram
+
+See:
+
+```
+diagrams/architecture.mmd
+```
+
+**High-level flow**
+
+```
+SEC EDGAR Index
+   ↓
+Ingest (Dask + Python)
+   ↓
+MongoDB Raw Layer
+   ↓
+Clean + Validate (Pydantic)
+   ↓
+MongoDB Clean Layer
+   ↓
+Gold Aggregations
+   ↓
+MongoDB Gold Collections
+   ↓
+Streamlit Dashboard
+```
+
+---
+
+## Dataset Description
+
+**Source:**
+SEC EDGAR Quarterly Master Index
+
+```
+https://www.sec.gov/Archives/edgar/full-index/
+```
+
+**Volume**
+
+* 750,000+ rows (configurable by year range)
+* Easily scales to millions
+
+**Core Columns (8+)**
+
+* `cik`
+* `company_name`
+* `form_type`
+* `date_filed`
+* `year`
+* `quarter`
+* `accession_number`
+* `file_name`
+* `edgar_url`
+* `ingest_ts`
+
+---
+
+## Processing Stack (Rubric Aligned)
+
+| Requirement         | Tool                  |
+| ------------------- | --------------------- |
+| Big Data Processing | **Dask**              |
+| Environment Mgmt    | **uv**                |
+| Schema Validation   | **Pydantic**          |
+| Type Checking       | **mypy**              |
+| Logging             | Python logging        |
+| Testing             | **PyTest (3+ tests)** |
+| Visualization       | **Streamlit**         |
+
+---
+
+## Project Structure
+
+```
+edgar-mongo-bigdata/
+│
+├── docker/
+│   └── mongo-init/
+│       └── init.js
+│
+├── src/
+│   └── edgar_pipeline/
+│       ├── ingest/
+│       ├── clean/
+│       ├── aggregate/
+│       ├── enrich/
+│       ├── models.py
+│       ├── db.py
+│       ├── cli.py
+│
+├── streamlit_app/
+│   └── app.py
+│
+├── tests/
+│   ├── test_models.py
+│   ├── test_cleaning.py
+│   └── test_aggregation.py
+│
+├── diagrams/
+│   └── architecture.mmd
+│
+├── docker-compose.yml
+├── pyproject.toml
+├── uv.lock
+├── README.md
+```
+
+---
+
+## Setup & Installation
+
+### 1️⃣ Environment Variables
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+MONGO_URI=mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0
+MONGO_DB=edgar
+SEC_USER_AGENT=YourName your.email@rowan.edu
+```
+
+---
+
+### 2️⃣ Start MongoDB Replica Set
+
+```bash
+docker compose up -d
+```
+
+Verify:
+
+```bash
+docker exec -it mongo1 mongosh --eval "rs.status()"
+```
+
+---
+
+### 3️⃣ Install Dependencies
+
+```bash
+uv sync --all-extras
+```
+
+---
+
+## Running the Pipeline
+
+**Important:** Global arguments must come **before** the command.
+
+---
+
+### 🔹 Ingest (Raw Layer)
+
+```bash
+PYTHONPATH=src uv run python -m edgar_pipeline.cli \
+  --from-year 2020 \
+  --to-year 2025 \
+  ingest
+```
+
+**Raw Layer Proof**
+
+```bash
+db.raw_filings.countDocuments()
+```
+
+---
+
+### 🔹 Clean & Validate (Clean Layer)
+
+```bash
+PYTHONPATH=src uv run python -m edgar_pipeline.cli clean
+```
+
+**Cleaning Includes**
+
+* Missing value handling
+* Text normalization
+* Date standardization
+* Deduplication
+* Pydantic schema validation
+
+---
+
+### 🔹 Aggregations (Gold Layer)
+
+```bash
+PYTHONPATH=src uv run python -m edgar_pipeline.cli gold
+```
+
+**Gold Collections Created**
+
+* `gold_filings_by_form_month`
+* `gold_forms_by_year`
+* `gold_top_ciks`
+* `gold_10k_by_year`
+* `gold_10k_top_ciks`
+* `gold_10k_recent`
+* `gold_10k_by_sic` *(optional enrichment)*
+
+---
+
+### 🔹 Run Everything (Optional)
+
+```bash
+PYTHONPATH=src uv run python -m edgar_pipeline.cli all
+```
+
+---
+
+## Streamlit Dashboard
+
+```bash
+uv run streamlit run streamlit_app/app.py
+```
+
+Open:
+
+```
+http://localhost:8501
+```
+
+### Dashboard Sections
+
+1. Executive Overview (KPIs)
+2. Filing Trends (Monthly / Yearly)
+3. Top Filing Companies (All Forms & 10-K)
+4. Long-Term 10-K Trends (Decades)
+5. Outlier Detection (Spikes/Drops)
+6. Industry Benchmarking (SIC/NAICS – optional enrichment)
+
+---
+
+## Industry Benchmarking (Optional Enrichment)
+
+SIC/NAICS codes are **not present** in the EDGAR master index.
+
+**To enable benchmarking**
+
+* Add SEC Company Facts API lookup
+* Join CIK → SIC/NAICS mapping
+* Aggregate into `gold_10k_by_sic`
+
+Current implementation demonstrates the **architecture and extensibility**.
+
+---
+
+##  Quality Gates
+
+```bash
+uv run pytest
+uv run mypy src
+```
+
+---
+
+## Indexing & Performance
+
+Defined in `docker/mongo-init/init.js`:
+
+* Unique index on `accession_number`
+* Compound index `(cik, date_filed)`
+* Index on `form_type`
+

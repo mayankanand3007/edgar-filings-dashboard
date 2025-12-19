@@ -1,0 +1,51 @@
+[project]
+name = "edgar-mongo-bigdata"
+version = "0.1.0"
+description = "EDGAR filings big-data pipeline using MongoDB (Docker), Dask, Pydantic, mypy, pytest, Streamlit."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "dask[dataframe]>=2024.4.0",
+  "pandas>=2.2.0",
+  "pyarrow>=16.0.0",
+  "pymongo>=4.7.0",
+  "pydantic>=2.6.0",
+  "python-dotenv>=1.0.1",
+  "requests>=2.32.0",
+  "streamlit>=1.36.0",
+  "certifi>=2025.11.12",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "mypy>=1.10.0",
+  "ruff>=0.6.0",
+  "types-requests>=2.32.0.20240712",
+  "types-python-dateutil>=2.9.0.20240316",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+no_implicit_optional = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+
+[project.scripts]
+edgar-pipeline = "edgar_pipeline.cli:main"
+
+[tool.uv]
+package = true
+
